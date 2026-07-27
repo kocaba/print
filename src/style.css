@@ -87,6 +87,45 @@ html, body {
 }
 .swatch.active { outline: 2px solid #4c6ef5; outline-offset: 2px; }
 
+.layers-panel { margin-top: 14px; }
+.layers-empty { font-size: 12px; color: #6b7086; padding: 8px 2px; }
+.layers-empty.hidden { display: none; }
+.layers-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; max-height: 160px; overflow-y: auto; }
+.layer-item {
+  display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 8px;
+  background: #1a1e2b; border: 1px solid #262b3a; cursor: pointer; font-size: 13px; color: #c7cbe0;
+}
+.layer-item:hover { border-color: #3a4160; }
+.layer-item.active { border-color: #4c6ef5; background: #202544; }
+.layer-icon { flex: 0 0 auto; }
+.layer-label { flex: 1 1 auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.layer-delete {
+  flex: 0 0 auto; background: none; border: none; color: #8890a8; cursor: pointer; font-size: 13px; padding: 2px 4px;
+}
+.layer-delete:hover { color: #ff8fa3; }
+
+.text-controls {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 10px 12px; margin-top: 14px;
+}
+.text-controls.hidden { display: none; }
+.text-controls label { display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: #a9aec4; }
+.text-controls label.full { grid-column: 1 / -1; }
+.text-controls input[type=text], .text-controls select {
+  background: #1f2330; border: 1px solid #2c3145; border-radius: 8px; padding: 9px 10px; color: #e9ecf1;
+  font-size: 14px; font-family: inherit;
+}
+.text-controls input[type=color] {
+  width: 100%; height: 36px; padding: 2px; border-radius: 8px; border: 1px solid #2c3145; background: #1f2330; cursor: pointer;
+}
+
+.uv-debug-btn {
+  position: absolute; top: 12px; right: 12px; z-index: 5;
+  background: rgba(20,22,32,0.75); color: #c7cbe0; border: 1px solid #2c3145; border-radius: 20px;
+  padding: 6px 12px; font-size: 12px; cursor: pointer; backdrop-filter: blur(4px);
+}
+.uv-debug-btn:hover { border-color: #4c6ef5; }
+.uv-debug-btn.active { background: #4c6ef5; color: #fff; border-color: #4c6ef5; }
+
 .bg-progress {
   margin-top: 12px; height: 8px; background: #1f2330; border-radius: 6px; position: relative; overflow: hidden;
 }
