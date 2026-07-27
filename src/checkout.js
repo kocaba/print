@@ -1,15 +1,30 @@
 import JSZip from "jszip";
 
 /**
- * Збирає всі дані замовлення (форма + дизайн + рендери), пакує файли
+ * Збирає всі дані замовлення (форма + шари дизайну + рендери), пакує файли
  * виробництва у ZIP та надсилає JSON-запит на маршрут "/api/order"
  * того ж Cloudflare Worker'а (src/worker.js), який відправляє email власнику.
  */
 export async function submitOrder({ formData, scene, editor, productConfig }) {
+  const layers = editor.getLayers();
+
+  const layersSummary = layers.map((l, idx) =>
+    l.type === "image"
+      ? { index: idx, type: "image" }
+      : {
+          index: idx,
+          type: "text",
+          text: l.text,
+          fontFamily: l.fontFamily,
+          color: l.color
+        }
+  );
+
   const orderInfo = {
     product: productConfig.label,
     productId: productConfig.id,
     color: editor.color,
+    layers: layersSummary,
     customerName: formData.get("customerName"),
     customerEmail: formData.get("customerEmail"),
     customerPhone: formData.get("customerPhone"),
@@ -23,25 +38,29 @@ export async function submitOrder({ formData, scene, editor, productConfig }) {
   // 1. Фінальний рендер 3D-сцени (те, що бачив клієнт)
   const finalRenderDataUrl = scene.captureScreenshot();
 
-  // 2. Повна текстура виробу у виробничій роздільній здатності (колір + принт разом)
+  // 2. Повна текстура виробу у виробничій роздільній здатності (колір + всі шари разом)
   const productionCanvas = editor.renderProductionTexture();
   const productionDataUrl = productionCanvas.toDataURL("image/png");
 
-  // 3. Сам принт окремо, на прозорому фоні, у високій роздільній здатності — файл для друкарні
+  // 3. Всі шари окремо, на прозорому фоні, у високій роздільній здатності — файл для друкарні
   const printOnlyCanvas = editor.renderPrintOnlyFile();
   const printOnlyDataUrl = printOnlyCanvas.toDataURL("image/png");
 
-  // 4. Пакуємо все у ZIP: оригінал + виробничі файли + order.json
+  // 4. Пакуємо все у ZIP: оригінали зображень + виробничі файли + order.json
   const zip = new JSZip();
   zip.file("order.json", JSON.stringify(orderInfo, null, 2));
   zip.file("production-texture-full.png", dataUrlToBase64(productionDataUrl), { base64: true });
   zip.file("print-only-transparent.png", dataUrlToBase64(printOnlyDataUrl), { base64: true });
   zip.file("final-render-preview.png", dataUrlToBase64(finalRenderDataUrl), { base64: true });
 
-  if (editor.originalFile) {
-    const originalBase64 = await blobToBase64(editor.originalFile);
-    const ext = guessExtension(editor.originalFile.type);
-    zip.file(`original-upload.${ext}`, originalBase64, { base64: true });
+  let imageIdx = 0;
+  for (const layer of layers) {
+    if (layer.type === "image" && layer.originalFile) {
+      imageIdx += 1;
+      const originalBase64 = await blobToBase64(layer.originalFile);
+      const ext = guessExtension(layer.originalFile.type);
+      zip.file(`original-upload-${imageIdx}.${ext}`, originalBase64, { base64: true });
+    }
   }
 
   const zipBlob = await zip.generateAsync({ type: "blob" });
