@@ -1,0 +1,22 @@
+{
+  "name": "print-configurator",
+  "version": "1.0.0",
+  "description": "Веб-конфігуратор друку на футболках, кепках і кружках. Працює повністю в браузері, деплоїться на Cloudflare Workers.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "worker:dev": "npm run build && wrangler dev",
+    "deploy": "npm run build && wrangler deploy"
+  },
+  "dependencies": {
+    "@imgly/background-removal": "^1.5.7",
+    "jszip": "^3.10.1",
+    "three": "^0.166.1"
+  },
+  "devDependencies": {
+    "vite": "^5.4.0",
+    "wrangler": "^3.78.0"
+  }
+}

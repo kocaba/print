@@ -1,0 +1,23 @@
+name = "print-configurator"
+main = "src/worker.js"
+compatibility_date = "2026-07-01"
+compatibility_flags = ["nodejs_compat"]
+
+# Статичні файли фронтенду (результат `npm run build` -> папка dist/).
+# binding = "ASSETS" дає доступу до них із коду Worker'а (env.ASSETS.fetch(...)).
+# run_worker_first вказує, що ЛИШЕ запити на /api/* мають спершу проходити
+# через код Worker'а (src/worker.js); усі інші шляхи віддаються напряму
+# зі статичних файлів без виконання JS — це найшвидше і найдешевше.
+[assets]
+directory = "./dist"
+binding = "ASSETS"
+run_worker_first = ["/api/*"]
+not_found_handling = "single-page-application"
+
+# Змінні середовища НЕ секретного типу можна лишити тут (необов'язково).
+# Секрети (RESEND_API_KEY, FROM_EMAIL, OWNER_EMAIL) додаються ТІЛЬКИ через:
+#   wrangler secret put RESEND_API_KEY
+#   wrangler secret put FROM_EMAIL
+#   wrangler secret put OWNER_EMAIL
+# або в Cloudflare Dashboard -> Workers & Pages -> ваш Worker -> Settings ->
+# Variables and Secrets (тип: Secret).

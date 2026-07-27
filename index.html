@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no" />
+  <title>Конфігуратор друку — футболки, кепки, кружки</title>
+  <meta name="description" content="Онлайн-конфігуратор друку на футболках, кепках і кружках з 3D-переглядом у реальному часі." />
+  <link rel="stylesheet" href="/src/style.css" />
+</head>
+<body>
+  <div id="app">
+
+    <header class="topbar">
+      <div class="brand">🖨️ Print Studio 3D</div>
+      <div class="product-switch" id="productSwitch">
+        <button class="product-btn active" data-product="tshirt">👕 Футболка</button>
+        <button class="product-btn" data-product="cap">🧢 Кепка</button>
+        <button class="product-btn" data-product="mug">☕ Кружка</button>
+      </div>
+    </header>
+
+    <main class="layout">
+
+      <!-- 3D VIEWER -->
+      <section class="viewer-panel">
+        <div id="viewer3d"></div>
+        <div class="viewer-hint">Затисни ліву кнопку миші — обертання, коліщатко — зум</div>
+        <div id="loadingOverlay" class="loading-overlay hidden">
+          <div class="spinner"></div>
+          <div id="loadingText">Завантаження моделі…</div>
+        </div>
+      </section>
+
+      <!-- DESIGN EDITOR (2D drag/scale/rotate stage mapped to print area) -->
+      <section class="editor-panel">
+        <h2>Зона друку</h2>
+        <div class="stage-wrap">
+          <canvas id="stageCanvas" width="600" height="600"></canvas>
+        </div>
+        <div class="stage-controls">
+          <label class="btn-file">
+            📁 Завантажити зображення
+            <input type="file" id="fileInput" accept="image/*" hidden />
+          </label>
+          <button id="removeBgBtn" class="btn secondary" disabled>✂️ Видалити фон</button>
+          <button id="resetDesignBtn" class="btn ghost" disabled>↺ Скинути</button>
+        </div>
+
+        <div class="sliders" id="transformSliders">
+          <label>Масштаб
+            <input type="range" id="scaleRange" min="0.1" max="3" step="0.01" value="1" disabled />
+          </label>
+          <label>Поворот
+            <input type="range" id="rotateRange" min="-180" max="180" step="1" value="0" disabled />
+          </label>
+        </div>
+
+        <div class="color-row">
+          <span>Колір виробу:</span>
+          <div class="swatches" id="colorSwatches"></div>
+        </div>
+
+        <div id="bgProgress" class="bg-progress hidden">
+          <div class="bg-progress-bar" id="bgProgressBar"></div>
+          <span id="bgProgressText">0%</span>
+        </div>
+      </section>
+
+    </main>
+
+    <button id="openCheckoutBtn" class="checkout-fab">🛒 Оформити замовлення</button>
+
+    <!-- CHECKOUT MODAL -->
+    <div id="checkoutModal" class="modal hidden">
+      <div class="modal-card">
+        <button class="modal-close" id="closeCheckoutBtn">✕</button>
+        <h2>Оформлення замовлення</h2>
+        <form id="checkoutForm">
+          <div class="form-grid">
+            <label>Ім'я та прізвище*
+              <input type="text" name="customerName" required autocomplete="name" />
+            </label>
+            <label>Email*
+              <input type="email" name="customerEmail" required autocomplete="email" />
+            </label>
+            <label>Телефон*
+              <input type="tel" name="customerPhone" required autocomplete="tel" />
+            </label>
+            <label>Кількість
+              <input type="number" name="quantity" min="1" max="1000" value="1" required />
+            </label>
+            <label>Розмір
+              <select name="size">
+                <option>XS</option><option>S</option><option selected>M</option>
+                <option>L</option><option>XL</option><option>XXL</option>
+                <option>Універсальний</option>
+              </select>
+            </label>
+            <label class="full">Адреса доставки*
+              <input type="text" name="shippingAddress" required autocomplete="street-address" />
+            </label>
+            <label class="full">Коментар до замовлення
+              <textarea name="notes" rows="3" placeholder="Побажання, дедлайн тощо"></textarea>
+            </label>
+          </div>
+          <div id="checkoutError" class="checkout-error hidden"></div>
+          <button type="submit" id="submitOrderBtn" class="btn primary full-width">
+            Надіслати замовлення
+          </button>
+        </form>
+        <div id="checkoutSuccess" class="checkout-success hidden">
+          <div class="success-icon">✅</div>
+          <p>Замовлення надіслано! Ми зв'яжемось із вами найближчим часом.</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
