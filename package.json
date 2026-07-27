@@ -1,36 +1,22 @@
 {
-  "name": "custom-print-studio",
-  "private": true,
+  "name": "print-configurator",
   "version": "1.0.0",
+  "description": "Веб-конфігуратор друку на футболках, кепках і кружках. Працює повністю в браузері, деплоїться на Cloudflare Workers.",
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
-    "preview": "vite preview"
+    "build": "vite build",
+    "preview": "vite preview",
+    "worker:dev": "npm run build && wrangler dev",
+    "deploy": "npm run build && wrangler deploy"
   },
   "dependencies": {
-    "@imgly/background-removal": "^1.5.5",
-    "@react-three/drei": "^9.121.5",
-    "@react-three/fiber": "^8.17.14",
-    "clsx": "^2.1.1",
-    "framer-motion": "^12.4.7",
-    "lucide-react": "^0.475.0",
-    "onnxruntime-web": "^1.20.1",
-    "react": "18.3.1",
-    "react-dom": "18.3.1",
-    "tailwind-merge": "^3.0.1",
-    "three": "^0.173.0"
+    "@imgly/background-removal": "^1.5.7",
+    "jszip": "^3.10.1",
+    "three": "^0.166.1"
   },
   "devDependencies": {
-    "@types/node": "^22.13.4",
-    "@types/react": "^18.3.12",
-    "@types/react-dom": "^18.3.1",
-    "@types/three": "^0.173.0",
-    "@vitejs/plugin-react": "^4.3.4",
-    "autoprefixer": "^10.4.20",
-    "postcss": "^8.5.2",
-    "tailwindcss": "^3.4.17",
-    "typescript": "^5.7.3",
-    "vite": "^6.1.0"
+    "vite": "^5.4.0",
+    "wrangler": "^4.20.0"
   }
 }
