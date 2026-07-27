@@ -1,5 +1,5 @@
 import { ProductScene } from "./scene.js";
-import { DesignEditor } from "./editor.js";
+import { DesignEditor, FONT_FAMILIES } from "./editor.js";
 import { submitOrder } from "./checkout.js";
 import { PRODUCTS, DEFAULT_PRODUCT_ID } from "./products.js";
 
@@ -7,13 +7,22 @@ const els = {
   viewer3d: document.getElementById("viewer3d"),
   loadingOverlay: document.getElementById("loadingOverlay"),
   loadingText: document.getElementById("loadingText"),
+  uvDebugBtn: document.getElementById("uvDebugBtn"),
   productSwitch: document.getElementById("productSwitch"),
   stageCanvas: document.getElementById("stageCanvas"),
   fileInput: document.getElementById("fileInput"),
+  addTextBtn: document.getElementById("addTextBtn"),
   removeBgBtn: document.getElementById("removeBgBtn"),
   resetDesignBtn: document.getElementById("resetDesignBtn"),
+  layersPanel: document.getElementById("layersPanel"),
+  layersEmpty: document.getElementById("layersEmpty"),
+  layersList: document.getElementById("layersList"),
   scaleRange: document.getElementById("scaleRange"),
   rotateRange: document.getElementById("rotateRange"),
+  textControls: document.getElementById("textControls"),
+  textContentInput: document.getElementById("textContentInput"),
+  fontSelect: document.getElementById("fontSelect"),
+  textColorInput: document.getElementById("textColorInput"),
   colorSwatches: document.getElementById("colorSwatches"),
   bgProgress: document.getElementById("bgProgress"),
   bgProgressBar: document.getElementById("bgProgressBar"),
@@ -28,14 +37,26 @@ const els = {
 };
 
 let currentProductId = DEFAULT_PRODUCT_ID;
+let uvDebugActive = false;
 const scene = new ProductScene(els.viewer3d);
+
+// Заповнюємо список шрифтів
+FONT_FAMILIES.forEach((f) => {
+  const opt = document.createElement("option");
+  opt.value = f;
+  opt.textContent = f;
+  opt.style.fontFamily = `"${f}"`;
+  els.fontSelect.appendChild(opt);
+});
 
 const editor = new DesignEditor({
   stageCanvas: els.stageCanvas,
   onChange: () => {
-    const tex = editor.renderProductionTexture();
+    const tex = uvDebugActive ? editor.renderUvDebugTexture() : editor.renderProductionTexture();
     scene.updateTextureFromCanvas(tex);
-  }
+  },
+  onSelect: (layer) => syncControlsToLayer(layer),
+  onLayersChange: (layers) => renderLayersList(layers)
 });
 
 async function loadProduct(productId) {
@@ -77,6 +98,65 @@ function renderColorSwatches(config) {
   });
 }
 
+// --- Список шарів ---
+function renderLayersList(layers) {
+  els.layersEmpty.classList.toggle("hidden", layers.length > 0);
+  els.layersList.innerHTML = "";
+  // показуємо зверху донизу (останній доданий / верхній шар — першим у списку)
+  [...layers].reverse().forEach((layer) => {
+    const li = document.createElement("li");
+    li.className = "layer-item" + (layer.id === editor.activeLayerId ? " active" : "");
+    li.dataset.id = layer.id;
+
+    const icon = document.createElement("span");
+    icon.className = "layer-icon";
+    icon.textContent = layer.type === "image" ? "🖼️" : "🔤";
+
+    const label = document.createElement("span");
+    label.className = "layer-label";
+    label.textContent = layer.type === "image" ? "Зображення" : layer.text || "Текст";
+
+    const del = document.createElement("button");
+    del.className = "layer-delete";
+    del.title = "Видалити шар";
+    del.textContent = "✕";
+    del.addEventListener("click", (e) => {
+      e.stopPropagation();
+      editor.removeLayer(layer.id);
+    });
+
+    li.appendChild(icon);
+    li.appendChild(label);
+    li.appendChild(del);
+    li.addEventListener("click", () => editor.selectLayer(layer.id));
+    els.layersList.appendChild(li);
+  });
+}
+
+// --- Синхронізація бічної панелі з обраним шаром ---
+function syncControlsToLayer(layer) {
+  [...els.layersList.children].forEach((li) => {
+    li.classList.toggle("active", li.dataset.id === (layer && layer.id));
+  });
+
+  const hasLayer = !!layer;
+  els.scaleRange.disabled = !hasLayer;
+  els.rotateRange.disabled = !hasLayer;
+  els.scaleRange.value = hasLayer ? layer.scale : 1;
+  els.rotateRange.value = hasLayer ? layer.rotationDeg : 0;
+
+  const isImage = hasLayer && layer.type === "image";
+  els.removeBgBtn.disabled = !isImage;
+
+  const isText = hasLayer && layer.type === "text";
+  els.textControls.classList.toggle("hidden", !isText);
+  if (isText) {
+    els.textContentInput.value = layer.text;
+    els.fontSelect.value = layer.fontFamily;
+    els.textColorInput.value = layer.color;
+  }
+}
+
 // --- Перемикання продукту ---
 els.productSwitch.addEventListener("click", (e) => {
   const btn = e.target.closest(".product-btn");
@@ -86,31 +166,35 @@ els.productSwitch.addEventListener("click", (e) => {
   loadProduct(btn.dataset.product);
 });
 
-// --- Завантаження зображення ---
+// --- Калібрування UV (щоб знайти правильні координати printArea під конкретну модель) ---
+els.uvDebugBtn.addEventListener("click", () => {
+  uvDebugActive = !uvDebugActive;
+  els.uvDebugBtn.classList.toggle("active", uvDebugActive);
+  const tex = uvDebugActive ? editor.renderUvDebugTexture() : editor.renderProductionTexture();
+  scene.updateTextureFromCanvas(tex);
+});
+
+// --- Додавання зображення (кожен файл — окремий новий шар) ---
 els.fileInput.addEventListener("change", async (e) => {
   const file = e.target.files[0];
   if (!file) return;
-  await editor.loadImageFile(file);
-  toggleDesignControls(true);
+  await editor.addImageLayer(file);
+  els.fileInput.value = "";
 });
 
-function toggleDesignControls(enabled) {
-  els.removeBgBtn.disabled = !enabled;
-  els.resetDesignBtn.disabled = !enabled;
-  els.scaleRange.disabled = !enabled;
-  els.rotateRange.disabled = !enabled;
-  els.scaleRange.value = 1;
-  els.rotateRange.value = 0;
-}
+// --- Додавання тексту ---
+els.addTextBtn.addEventListener("click", () => {
+  editor.addTextLayer();
+});
 
-// --- Видалення фону ---
+// --- Видалення фону активного зображення ---
 els.removeBgBtn.addEventListener("click", async () => {
   els.removeBgBtn.disabled = true;
   els.bgProgress.classList.remove("hidden");
   els.bgProgressBar.style.width = "0%";
   els.bgProgressText.textContent = "0%";
   try {
-    await editor.removeBackground((percent, stage) => {
+    await editor.removeBackgroundOnActive((percent, stage) => {
       els.bgProgressBar.style.width = percent + "%";
       els.bgProgressText.textContent = `${percent}% (${stage})`;
     });
@@ -123,16 +207,19 @@ els.removeBgBtn.addEventListener("click", async () => {
   }
 });
 
-// --- Скидання дизайну ---
+// --- Очищення всіх шарів ---
 els.resetDesignBtn.addEventListener("click", () => {
   editor.reset();
-  els.fileInput.value = "";
-  toggleDesignControls(false);
 });
 
-// --- Слайдери масштабу / повороту ---
-els.scaleRange.addEventListener("input", (e) => editor.setScale(parseFloat(e.target.value)));
-els.rotateRange.addEventListener("input", (e) => editor.setRotation(parseFloat(e.target.value)));
+// --- Слайдери масштабу / повороту активного шару ---
+els.scaleRange.addEventListener("input", (e) => editor.setActiveScale(parseFloat(e.target.value)));
+els.rotateRange.addEventListener("input", (e) => editor.setActiveRotation(parseFloat(e.target.value)));
+
+// --- Контроли текстового шару ---
+els.textContentInput.addEventListener("input", (e) => editor.updateActiveLayer({ text: e.target.value }));
+els.fontSelect.addEventListener("change", (e) => editor.updateActiveLayer({ fontFamily: e.target.value }));
+els.textColorInput.addEventListener("input", (e) => editor.updateActiveLayer({ color: e.target.value }));
 
 // --- Модалка чекауту ---
 els.openCheckoutBtn.addEventListener("click", () => {
@@ -153,7 +240,7 @@ els.checkoutForm.addEventListener("submit", async (e) => {
   els.checkoutError.classList.add("hidden");
 
   if (!editor.hasDesign()) {
-    els.checkoutError.textContent = "Спочатку завантажте зображення для друку.";
+    els.checkoutError.textContent = "Спочатку додайте зображення або текст для друку.";
     els.checkoutError.classList.remove("hidden");
     return;
   }
@@ -182,5 +269,6 @@ els.checkoutForm.addEventListener("submit", async (e) => {
 });
 
 // --- Старт ---
-toggleDesignControls(false);
+renderLayersList([]);
+syncControlsToLayer(null);
 loadProduct(currentProductId);
