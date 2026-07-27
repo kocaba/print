@@ -134,10 +134,13 @@ export class ProductScene {
       this.canvasTexture = new THREE.CanvasTexture(canvas);
       this.canvasTexture.colorSpace = THREE.SRGBColorSpace;
       this.canvasTexture.flipY = false;
-      this.canvasTexture.needsUpdate = true;
     } else {
-      this.canvasTexture.needsUpdate = true;
+      // editor.renderProductionTexture() створює НОВИЙ <canvas> при кожному виклику,
+      // тож треба щоразу оновлювати посилання на актуальний canvas,
+      // інакше текстура назавжди застрягає на першому (порожньому) знімку.
+      this.canvasTexture.image = canvas;
     }
+    this.canvasTexture.needsUpdate = true;
 
     for (const mesh of this.targetMeshes) {
       const mat = mesh.material;
